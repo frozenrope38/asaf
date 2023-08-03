@@ -1,0 +1,289 @@
+// main.dart
+import 'package:flutter/material.dart';
+import 'package:asaf/quiz.dart';
+import 'package:asaf/result.dart';
+
+void main() {
+  runApp(ASAF());
+}
+
+class ASAF extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    return _ASAFState();
+  }
+}
+
+class _ASAFState extends State<ASAF> {
+  final _questions = const [
+    {
+      'questionText': 'What is the capital of Canada?',
+      'answers': [
+        {'text': 'Ottawa', 'score': 10},
+        {'text': 'Toronto', 'score': 0},
+        {'text': 'Montreal', 'score': 0},
+        {'text': 'Vancouver', 'score': 0},
+      ],
+    },
+    {
+      'questionText': 'What is the largest animal in the world?',
+      'answers': [
+        {'text': 'Elephant', 'score': 0},
+        {'text': 'Whale', 'score': 10},
+        {'text': 'Giraffe', 'score': 0},
+        {'text': 'Dinosaur', 'score': 0},
+      ],
+    },
+    // Add more questions here
+  ];
+
+  var _questionIndex = 0;
+  var _totalScore = 0;
+
+  void _resetQuiz() {
+    setState(() {
+      _questionIndex = 0;
+      _totalScore = 0;
+    });
+  }
+
+  void _answerQuestion(int score) {
+    _totalScore += score;
+
+    setState(() {
+      _questionIndex = _questionIndex + 1;
+    });
+    if (_questionIndex < _questions.length) {
+      print('We have more questions!');
+    } else {
+      print('No more questions!');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('ASAF'),
+        ),
+        body: _questionIndex < _questions.length
+            ? Quiz(
+                answerQuestion: _answerQuestion,
+                questionIndex: _questionIndex,
+                questions: _questions,
+              ) //Quiz
+            : Result(_totalScore, _resetQuiz),
+      ), //Scaffold
+    ); //MaterialApp
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// quiz.dart
+import 'package:flutter/material.dart';
+import './question.dart';
+import './answer.dart';
+
+class Quiz extends StatelessWidget {
+  final List<Map<String, Object>> questions;
+  final int questionIndex;
+  final Function answerQuestion;
+
+  Quiz({
+    @required this.questions,
+    @required this.answerQuestion,
+    @required this.questionIndex,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Question(
+          questions[questionIndex]['questionText'],
+        ), //Question
+        ...(questions[questionIndex]['answers'] as List<Map<String, Object>>)
+            .map((answer) {
+          return Answer(() => answerQuestion(answer['score']), answer['text']);
+        }).toList()
+      ],
+    ); //Column
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// result.dart
+import 'package:flutter/material.dart';
+
+class Result extends StatelessWidget {
+  final int resultScore;
+  final Function resetHandler;
+
+  Result(this.resultScore, this.resetHandler);
+
+  String get resultPhrase {
+    var resultText = 'You did it!';
+    if (resultScore <= 80) {
+      resultText = 'You need to study more!';
+    } else if (resultScore <= 160) {
+      resultText = 'You are good!';
+    } else if (resultScore <= 200) {
+      resultText = 'You are awesome!';
+    } else {
+      resultText = 'You are a genius!';
+    }
+    return resultText;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        children: <Widget>[
+          Text(
+            resultPhrase,
+            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ), //Text
+          Text(
+            'Score: $resultScore',
+            style: TextStyle(fontSize: 28),
+            textAlign: TextAlign.center,
+          ), //Text
+          FlatButton(
+            child: Text(
+              'Restart Quiz!',
+            ), //Text
+            textColor: Colors.blue,
+            onPressed: resetHandler,
+          ), //FlatButton
+        ], //<Widget>[]
+      ), //Column
+
+
+
+
+
+
+
+//functionality- To add login functionality, you need to use some packages that can handle authentication and validation, such as firebase_auth and flutter_form_builder. You also need to create a login screen that can take the user’s email and password, and a sign-up screen that can register a new user
+
+// login_screen.dart
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:asaf/sign_up_screen.dart';
+
+class LoginScreen extends StatefulWidget {
+  @override
+  _LoginScreenState createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormBuilderState>();
+  final _auth = FirebaseAuth.instance;
+
+  void _login() async {
+    if (_formKey.currentState.validate()) {
+      _formKey.currentState.save();
+      try {
+        await _auth.signInWithEmailAndPassword(
+            email: _formKey.currentState.fields['email'].value,
+            password: _formKey.currentState.fields['password'].value);
+        // Navigate to quiz screen
+      } catch (e) {
+        print(e);
+        // Show error message
+      }
+    }
+  }
+
+  void _signUp() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => SignUpScreen()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('ASAF'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: FormBuilder(
+          key: _formKey,
+          child: Column(
+            children: [
+              FormBuilderTextField(
+                name: 'email',
+                decoration: InputDecoration(labelText: 'Email'),
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.required(context),
+                  FormBuilderValidators.email(context),
+                ]),
+              ),
+              FormBuilderTextField(
+                name: 'password',
+                decoration: InputDecoration(labelText: 'Password'),
+                obscureText: true,
+                validator: FormBuilderValidators.compose([
+                  FormBuilderValidators.required(context),
+                  FormBuilderValidators.minLength(context, 6),
+                ]),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _login,
+                child: Text('Login'),
+              ),
+              SizedBox(height: 16),
+              Text('Don't have an account?'),
+              TextButton(
+                onPressed: _signUp,
+                child: Text('Sign up'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
